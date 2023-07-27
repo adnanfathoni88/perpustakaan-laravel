@@ -1,73 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>Login</title>
+        {{-- link bootstrap --}}
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.3.1/mdb.min.css"
+            rel="stylesheet"
+        />
+    </head>
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
+    <body>
+        <div class="container mt-4">
+            <h1>Login</h1>
 
-    <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .container {
-            width: 50%;
-            margin: 0 auto;
-            border: 1px solid #ccc;
-            padding: 10px;
-        }
-
-        .container h2 {
-            text-align: center;
-        }
-
-        .container form div {
-            margin: 10px 0;
-        }
-
-        .container form div label {
-            display: inline-block;
-            width: 150px;
-        }
-
-        .container form div input {
-            width: 200px;
-            padding: 5px;
-        }
-
-        .container form div button {
-            padding: 5px 10px;
-            background-color: #ccc;
-            border: none;
-            cursor: pointer;
-        }
-
-        .container form div a {
-            text-decoration: none;
-            color: #333;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <h2>Login</h2>
-        <form method="POST" action="/login">
-            @csrf
-            <div>
-                <label for="email">Email</label>
-                <input id="email" type="email" name="email" value="{{ old('email') }}" autofocus />
+            {{-- error --}}
+            @if(Session::has('status'))
+            <div class="alert alert-danger mt-3">
+                {{ Session::get('status')}}
             </div>
-            <div>
-                <label for="password">Password</label>
-                <input id="password" type="password" name="password" required />
-            </div>
-            <div>
-                <button type="submit">Login</button>
-            </div>
-        </form>
-    </div>
-</body>
+            @endif
 
+            <form action="/login" method="post">
+                @csrf
+                <div>
+                    <label for="email">email</label>
+                    <input class="form-control" type="text" name="email" />
+                </div>
+                <div>
+                    <label for="password">password</label>
+                    <input
+                        class="form-control"
+                        type="password"
+                        name="password"
+                    />
+                </div>
+                <button class="btn btn-primary mt-3" type="submit">
+                    Login
+                </button>
+            </form>
+        </div>
+    </body>
 </html>

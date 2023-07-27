@@ -12,44 +12,47 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+});
 //dashboard
-Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('admin.dashboard');
+Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard')->middleware('auth');
 
 //buku
 Route::get('/buku', [BukuController::class, 'index'])->middleware('auth');
-Route::get('/add-buku', [BukuController::class, 'create']);
-Route::post('/add-buku', [BukuController::class, 'store']);
-Route::get('/edit-buku/{id}', [BukuController::class, 'edit']);
-Route::post('/edit-buku/{id}', [BukuController::class, 'update']);
-Route::get('/hapus-buku/{id}', [BukuController::class, 'destroy']);
-Route::post('/cari-buku', [BukuController::class, 'cari']);
+Route::get('/add-buku', [BukuController::class, 'create'])->middleware('auth');
+Route::post('/add-buku', [BukuController::class, 'store'])->middleware('auth');
+Route::get('/edit-buku/{id}', [BukuController::class, 'edit'])->middleware('auth');
+Route::post('/edit-buku/{id}', [BukuController::class, 'update'])->middleware('auth');
+Route::get('/hapus-buku/{id}', [BukuController::class, 'destroy'])->middleware('auth');
+Route::post('/cari-buku/{id}', [BukuController::class, 'cari'])->middleware('auth');
 
 //kategori
-Route::get('/kategori', [KategoriController::class, 'index']);
-Route::get('/add-kategori', [KategoriController::class, 'create']);
-Route::post('/add-kategori', [KategoriController::class, 'store']);
-Route::get('/edit-kategori/{id}', [KategoriController::class, 'edit']);
-Route::post('/edit-kategori/{id}', [KategoriController::class, 'update']);
-Route::get('/hapus-kategori/{id}', [KategoriController::class, 'destroy']);
-Route::post('/cari', [KategoriController::class, 'cari']);
+Route::get('/kategori', [KategoriController::class, 'index'])->middleware('auth');
+Route::get('/add-kategori', [KategoriController::class, 'create'])->middleware('auth');
+Route::post('/add-kategori', [KategoriController::class, 'store'])->middleware('auth');
+Route::get('/edit-kategori/{id}', [KategoriController::class, 'edit'])->middleware('auth');
+Route::post('/edit-kategori/{id}', [KategoriController::class, 'update'])->middleware('auth');
+Route::get('/hapus-kategori/{id}', [KategoriController::class, 'destroy'])->middleware('auth');
+Route::post('/cari', [KategoriController::class, 'cari'])->middleware('auth');
 
 
 //pdf
-Route::get('/show-pdf/{id}', [BukuController::class, 'pdf']);
+Route::get('/show-pdf/{id}', [BukuController::class, 'pdf'])->middleware('auth');
 
 // image
-Route::get('/img/{img}', [UploadImageController::class, 'index']);
+Route::get('/img/{img}', [UploadImageController::class, 'index'])->middleware('auth');
 
 //login
 Route::get('/login', [AuthController::class, 'index'])->name('login')->middleware('guest');
-Route::post('/login', [AuthController::class, 'login']);
-Route::get('/logout', [AuthController::class, 'logout']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('auth');
+Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth');
 
 // user
-Route::get('/register', [UserController::class, 'index']);
-Route::get('/add-user', [UserController::class, 'create']);
-Route::post('/add-user', [UserController::class, 'store']);
-Route::get('/edit-user/{id}', [UserController::class, 'edit']);
-Route::post('/edit-user/{id}', [UserController::class, 'update']);
-Route::get('/hapus-user/{id}', [UserController::class, 'destroy']);
+Route::get('/user', [UserController::class, 'index'])->middleware('auth');
+Route::get('/register', [UserController::class, 'index'])->middleware('auth');
+Route::get('/add-user', [UserController::class, 'create'])->middleware('auth');
+Route::post('/add-user', [UserController::class, 'store'])->middleware('auth');
+Route::get('/edit-user/{id}', [UserController::class, 'edit'])->middleware('auth');
+Route::post('/edit-user/{id}', [UserController::class, 'update'])->middleware('auth');
+Route::get('/hapus-user/{id}', [UserController::class, 'destroy'])->middleware('auth');

@@ -9,11 +9,18 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('auth');
+    }
     function dashboard()
     {
-        return view('user/dashboard');
+        $title = 'Dashboard User';
+        $userLogin = Session()->get('user');
+        $user = User::where('id', $userLogin)->first();
+        return view('user/dashboard', compact('user', 'title'));
     }
-    function index2()
+    function index()
     {
         $title = 'Register';
         $user = User::with('role')->get();

@@ -20,16 +20,15 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             if (Auth::check()) {
-                $role_id = Auth::user()->role_id;
+                $role_id = Auth::user()->id;
                 if ($role_id === 1) {
+                    $request->session()->put('user', Auth::user()->id);
                     return redirect()->route('admin.dashboard');
                 } else {
-                    return redirect()->route('/user/dashboard');
+                    $request->session()->put('user', Auth::user()->id);
+                    return redirect()->route('user.dashboard');
                 }
             }
-
-            // $user = Auth::user();
-            // $request->session()->put('id', $user->id);
         }
         dd('login gagal');
     }

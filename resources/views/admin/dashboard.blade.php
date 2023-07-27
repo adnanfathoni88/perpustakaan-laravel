@@ -1,14 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layout.main') @section('content')
+<div class="container-fluid">
+    <h1>welcome {{ $user->nama}}</h1>
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard</title>
-</head>
-
-<body>
-    <h1>admin</h1>
-</body>
-
-</html>
+    @if (session('error'))
+    <div class="alert alert-danger">
+        {{ session("error") }}
+    </div>
+</div>
+@endif @endsection

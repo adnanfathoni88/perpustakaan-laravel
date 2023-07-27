@@ -7,17 +7,25 @@ use App\Models\User;
 use App\Models\Kategori;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 
 class BukuController extends Controller
 {
     function  index()
     {
         $title = 'buku';
-        $user = Session::get('id');
         $kategori = Kategori::all();
-        $buku = Buku::with('kategori')->where('id', $user)->paginate(5);
-        return view('buku.index', compact('buku', 'title', 'kategori'));
+
+        //seleksi buku sesuai user
+        $userLogin = Session::get('user');
+        if ($userLogin == 1) {
+            $buku = Buku::with('kategori', 'user')->paginate(5);
+        } else {
+            $buku = Buku::with('kategori')->where('user_id', $userLogin)->paginate(5);
+        }
+        return view('buku.index', compact('buku', 'title', 'kategori', 'userLogin'));
     }
     function create()
     {
@@ -27,21 +35,19 @@ class BukuController extends Controller
     }
     function store(Request $request)
     {
-        // user_id
-        $user = User::where('nama', Session::get('nama'))->get();
-        $user_id = $user[0]->id;
 
+        $userLogin = Session::get('user');
+        $user_id = User::where('id', $userLogin)->first();
         $data = $request->validate([
             'judul' => 'required',
             'deskripsi' => 'required',
             'jumlah' => 'required',
             'file' => 'required',
-            'cover' => 'nullable',
+            'cover' => 'required',
             'kategori_id' => 'required',
-            'user_id' => '',
         ]);
 
-        $data['user_id'] = $user_id;
+        $data['user_id'] = $userLogin;
 
         // tambah gambar
         $namaFile = null;
@@ -81,7 +87,7 @@ class BukuController extends Controller
             'judul' => 'required',
             'deskripsi' => 'required',
             'jumlah' => 'required',
-            'file' => 'required|mimes:pdf',
+            'file' => 'mimes:pdf',
             'cover' => 'nullable',
             'kategori_id' => 'required',
         ]);
@@ -100,14 +106,22 @@ class BukuController extends Controller
         }
 
         // tambah pdf
+        $buku = Buku::findOrFail($id);
+        $pdfPath = $buku->file;
+
         if ($request->hasFile('file')) {
-            $pdfPath = $request->file('file')->store('public/pdf');
-
-            $data['file'] = $pdfPath;
-
-            Buku::where('id', $id)->update($data);
-            return redirect('/buku')->with('update', 'Data Buku Berhasil Diubah!');
+            $pdf = $request->file('file');
+            if ($pdf) {
+                $extension = $request->file('file')->getClientOriginalExtension();
+                $pdfPath = Str::uuid() . '.' . $extension; // buat nama unique
+                $request->file('file')->storeAs('public/pdfs', $pdfPath);
+            } else {
+                unset($data['file']);
+            }
         }
+        $data['file'] = $pdfPath;
+        Buku::where('id', $id)->update($data);
+        return redirect('/buku')->with('update', 'Data Buku Berhasil Diubah!');
     }
     function destroy($id)
     {
@@ -115,29 +129,92 @@ class BukuController extends Controller
         return redirect('/buku')->with('delete', 'Data Buku Berhasil Dihapus!');
     }
 
-    function cari(Request $request)
+    function cari(Request $request, $id)
     {
+        $userLogin = $id;
         $title = 'Halaman List Buku';
         $cari = $request->cari;
         $kategoriArray = $request->kategori;
         $kategori = Kategori::all();
 
-        if ($kategoriArray) {
-            $buku = Buku::with('kategori')
-                ->where('judul', 'like', "%" . $cari . "%")
-                ->whereIn('kategori_id', $kategoriArray)->paginate(5);
+        $isAdmin = Auth::user()->isAdmin;
+
+        if ($isAdmin) {
+            if (!$cari && $kategoriArray) {
+                $buku = Buku::with('kategori')
+                    ->whereIn('kategori_id', $kategoriArray)
+                    ->get();
+            } else {
+                if ($cari) {
+                    if ($kategoriArray) {
+                        $buku = Buku::with('kategori')
+                            ->whereIn('kategori_id', $kategoriArray)
+                            ->where('judul', 'like', "%" . $cari . "%")
+                            ->get();
+                    } else {
+                        $buku = Buku::with('kategori')
+                            ->where('judul', 'like', "%" . $cari . "%")
+                            ->get();
+                    }
+                } else {
+                    return $this->index();
+                }
+            }
         } else {
-            $buku = Buku::with('kategori')
-                ->where('judul', 'like', "%" . $cari . "%")->paginate(5);
+            if (!$cari && $kategoriArray) {
+                $buku = Buku::with('kategori')
+                    ->whereIn('kategori_id', $kategoriArray)
+                    ->where('user_id', $userLogin)
+                    ->get();
+            } else {
+                if ($cari) {
+                    if ($kategoriArray) {
+                        $buku = Buku::with('kategori')
+                            ->whereIn('kategori_id', $kategoriArray)
+                            ->where('judul', 'like', "%" . $cari . "%")
+                            ->where('user_id', $userLogin)
+                            ->get();
+                    } else {
+                        $buku = Buku::with('kategori')
+                            ->where('judul', 'like', "%" . $cari . "%")
+                            ->where('user_id', $userLogin)
+                            ->get();
+                    }
+                } else {
+                    return $this->index();
+                }
+            }
         }
 
-        return view('buku/index', compact('title', 'buku', 'kategori'));
+        session(['filter-buku' => $buku]);
+
+
+        return view('buku/index', compact('title', 'buku', 'kategori', 'userLogin'));
     }
 
     function pdf($id)
     {
         $buku = Buku::findOrFail($id);
-        $pdf = public_path() . '/storage/pdfs/' . $buku->file;
-        return response()->file($pdf);
+        if ($buku && Storage::exists('public/pdfs/' . $buku->file)) {
+            $pdf = public_path() . '/storage/pdfs/' . $buku->file;
+            return response()->file($pdf);
+        } else {
+            return redirect('/buku')->with('error', 'Data Buku Tidak Ditemukan!');
+        }
+    }
+
+    public function laporan_pdf(Request $request)
+    {
+        $title = 'Halaman Laporan';
+        $buku = Buku::all();
+        $kontrak = session('filter-buku');
+
+        $html = View('laporan/laporan_cetak', compact('kontrak', 'title', 'kos'))->render();
+
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->stream('invoice.pdf', ['Attachment' => false]);
     }
 }

@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class KategoriController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('isAdmin');
+    }
     function index()
     {
         $title = 'kategori';
